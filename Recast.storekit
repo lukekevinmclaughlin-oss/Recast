@@ -1,0 +1,81 @@
+{
+  "identifier" : "7EC45701",
+  "nonRenewingSubscriptions" : [],
+  "products" : [],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+      { "current" : null, "enabled" : false, "name" : "Load Products" },
+      { "current" : null, "enabled" : false, "name" : "Purchase" },
+      { "current" : null, "enabled" : false, "name" : "Verification" },
+      { "current" : null, "enabled" : false, "name" : "App Store Sync" },
+      { "current" : null, "enabled" : false, "name" : "Subscription Status" },
+      { "current" : null, "enabled" : false, "name" : "App Transaction" },
+      { "current" : null, "enabled" : false, "name" : "Manage Subscriptions Sheet" },
+      { "current" : null, "enabled" : false, "name" : "Refund Request Sheet" },
+      { "current" : null, "enabled" : false, "name" : "Offer Code Redeem Sheet" }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "7EC45710",
+      "localizations" : [],
+      "name" : "Recast Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "2.99",
+          "familyShareable" : true,
+          "groupNumber" : 1,
+          "internalID" : "7EC45711",
+          "introductoryOffer" : {
+            "internalID" : "7EC45721",
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
+          "localizations" : [
+            {
+              "description" : "Batch, folder and automatic conversion.",
+              "displayName" : "Recast Premium Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.lukemclaughlin.recast.premium.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Recast Premium Monthly",
+          "subscriptionGroupID" : "7EC45710",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "19.99",
+          "familyShareable" : true,
+          "groupNumber" : 1,
+          "internalID" : "7EC45712",
+          "introductoryOffer" : {
+            "internalID" : "7EC45722",
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
+          "localizations" : [
+            {
+              "description" : "Batch, folder and automatic conversion.",
+              "displayName" : "Recast Pro Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.lukemclaughlin.recast.premium.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Recast Pro Annual",
+          "subscriptionGroupID" : "7EC45710",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : { "major" : 3, "minor" : 0 }
+}
