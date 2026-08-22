@@ -1,0 +1,16 @@
+allowBuilds:
+  electron: true
+  electron-winstaller: true
+  esbuild: true
+  ffmpeg-static: true
+  sharp: true
+onlyBuiltDependencies:
+  - '@napi-rs/canvas'
+  - '@resvg/resvg-js'
+  - electron
+  - esbuild
+  - ffmpeg-static
+  - protobufjs
+  - sharp
+overrides:
+  js-yaml: 5.2.1
