@@ -1,4 +1,8 @@
 name: Recast
+configs:
+  Debug: debug
+  Release: release
+  Direct: release
 options:
   bundleIdPrefix: com.lukemclaughlin
   deploymentTarget:
@@ -23,6 +27,8 @@ targets:
     supportedDestinations: [macOS, iOS]
     sources:
       - path: Sources
+        excludes:
+          - "**/* 2.swift"
       - path: Resources/Assets.xcassets
     settings:
       base:
@@ -44,6 +50,15 @@ targets:
         INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         COMBINE_HIDPI_IMAGES: YES
+      configs:
+        Direct:
+          PRODUCT_BUNDLE_IDENTIFIER: com.lukemclaughlin.recast.direct
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DIRECT_DISTRIBUTION"
+          CODE_SIGN_IDENTITY: "Developer ID Application"
+          CODE_SIGN_STYLE: Manual
+          ENABLE_HARDENED_RUNTIME: YES
+          OTHER_CODE_SIGN_FLAGS: --timestamp
+          CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
 
 schemes:
   Recast:

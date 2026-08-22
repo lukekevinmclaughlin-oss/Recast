@@ -1,3 +1,26 @@
+#if DIRECT_DISTRIBUTION
+import Foundation
+
+/// Website Direct edition: access is permanent and local. StoreKit is not
+/// imported or linked into this build.
+@MainActor
+final class ProManager: ObservableObject {
+    static let shared = ProManager()
+    @Published private(set) var isPro = true
+    @Published private(set) var isLoading = false
+    @Published private(set) var isPurchasing = false
+    @Published private(set) var isRestoring = false
+    @Published var lastError: String?
+    @Published var statusMessage: String? = "Direct edition — every feature is unlocked."
+    private init() {}
+    var hasAccess: Bool { true }
+    func refresh() async {}
+    func restore() async { statusMessage = "Direct edition — no purchase restoration is needed." }
+    #if DEBUG
+    func toggleDebugPro() { isPro = true }
+    #endif
+}
+#else
 import Foundation
 import StoreKit
 
@@ -228,3 +251,4 @@ final class ProManager: ObservableObject {
 
     private enum StoreError: Error { case failedVerification }
 }
+#endif

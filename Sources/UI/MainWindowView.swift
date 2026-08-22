@@ -1,6 +1,8 @@
 #if os(macOS)
 import SwiftUI
+#if !DIRECT_DISTRIBUTION
 import StoreKit
+#endif
 #if os(macOS)
 import AppKit
 #endif
@@ -13,7 +15,9 @@ struct MainWindowView: View {
     @EnvironmentObject private var pro: ProManager
     @EnvironmentObject private var engagement: EngagementManager
     @Environment(\.openSettings) private var openSettings
+    #if !DIRECT_DISTRIBUTION
     @Environment(\.requestReview) private var requestReview
+    #endif
 
     var body: some View {
         ZStack {
@@ -30,6 +34,7 @@ struct MainWindowView: View {
         }
         .frame(minWidth: 900, minHeight: 620)
         .preferredColorScheme(.dark)
+        #if !DIRECT_DISTRIBUTION
         .sheet(isPresented: $engagement.showWelcome) { PremiumIntroView() }
         .sheet(isPresented: $coordinator.showProGate) { ProGateView() }
         .onChange(of: engagement.showPremiumReminder) { _, shouldShow in
@@ -42,6 +47,7 @@ struct MainWindowView: View {
             engagement.shouldRequestReview = false
             requestReview()
         }
+        #endif
         #if DEBUG
         .task { coordinator.seedDemoIfRequested() }
         #endif

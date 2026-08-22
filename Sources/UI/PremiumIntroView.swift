@@ -1,3 +1,24 @@
+#if DIRECT_DISTRIBUTION
+import SwiftUI
+
+struct PremiumIntroView: View {
+    @EnvironmentObject private var engagement: EngagementManager
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        VStack(spacing: 18) {
+            BrandMark(size: 56)
+            Text("The complete Recast experience").font(.title2.bold())
+            Text("Your Direct edition includes batches, whole folders and automatic workflows with no subscription.")
+                .multilineTextAlignment(.center).foregroundStyle(.secondary)
+            Button("Start converting") {
+                engagement.completeWelcome()
+                dismiss()
+            }.buttonStyle(.borderedProminent)
+        }
+        .padding(30).frame(minWidth: 360, minHeight: 320)
+    }
+}
+#else
 import SwiftUI
 
 struct PremiumIntroView: View {
@@ -43,3 +64,4 @@ struct PremiumIntroView: View {
         dismiss()
     }
 }
+#endif

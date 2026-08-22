@@ -51,6 +51,14 @@ struct SettingsView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
 
+            #if DIRECT_DISTRIBUTION
+            Section("License") {
+                Label("Direct edition — fully unlocked", systemImage: "checkmark.seal.fill")
+                    .foregroundStyle(.green)
+                Text("One-time website purchase. No subscription, StoreKit purchase, account, or restore step.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            #else
             Section("Recast Premium") {
                 subscriptionStatus
                 if pro.isPro {
@@ -71,6 +79,7 @@ struct SettingsView: View {
                 Text("Free includes unlimited single-file conversions. Premium adds batches, folders, and automatic workflows.")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            #endif
 
             Section("About") {
                 Link("Privacy Policy", destination: URL(string: "https://macossoftware.com/legal/privacy/")!)
@@ -91,6 +100,7 @@ struct SettingsView: View {
         .frame(minWidth: 380, minHeight: 460)
     }
 
+    #if !DIRECT_DISTRIBUTION
     @ViewBuilder private var subscriptionStatus: some View {
         switch pro.accessState {
         case .loading:
@@ -119,4 +129,5 @@ struct SettingsView: View {
             Label("Subscription refunded or revoked", systemImage: "xmark.seal")
         }
     }
+    #endif
 }

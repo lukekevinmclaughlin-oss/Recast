@@ -1,3 +1,20 @@
+#if DIRECT_DISTRIBUTION
+import SwiftUI
+
+struct ProGateView: View {
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        VStack(spacing: 18) {
+            BrandMark(size: 56)
+            Text("Recast Direct edition").font(.title2.bold())
+            Text("Every conversion format, batch, folder and automatic workflow is already unlocked. There is no subscription and no in-app purchase.")
+                .multilineTextAlignment(.center).foregroundStyle(.secondary)
+            Button("Continue") { dismiss() }.buttonStyle(.borderedProminent)
+        }
+        .padding(30).frame(minWidth: 360, minHeight: 300)
+    }
+}
+#else
 import StoreKit
 import SwiftUI
 
@@ -175,3 +192,4 @@ struct ProGateView: View {
         }
     }
 }
+#endif
