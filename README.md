@@ -6,6 +6,10 @@ Native SwiftUI app for **macOS** (menu-bar agent + full window) and **iOS / iPad
 A pluggable **capability-graph engine** routes any file to any reachable format,
 chaining conversions when needed (e.g. `docx → html → pdf`).
 
+## Website
+
+See the [Mac product page](https://www.macossoftware.com/recast/) for screenshots, features, system requirements and the direct download edition. For help, visit [IndepApps support](https://www.macossoftware.com/support/).
+
 ## How it works — the capability graph
 
 Every backend contributes directed edges (`from → to`) into one graph. To convert
