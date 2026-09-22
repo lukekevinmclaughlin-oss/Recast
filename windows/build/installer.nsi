@@ -1,6 +1,8 @@
 Unicode true
 RequestExecutionLevel user
-SetCompressor /SOLID lzma
+; Compress each file separately so the compiler does not map the entire 2+ GB
+; uncompressed Office payload as one solid block.
+SetCompressor lzma
 
 !include "MUI2.nsh"
 
