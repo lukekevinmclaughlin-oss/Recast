@@ -15,4 +15,10 @@ describe("Recast capability graph", () => {
     expect(classify("backup.tar.gz")?.id).toBe("targz");
     expect(classify("photo.JPEG")?.id).toBe("jpeg");
   });
+
+  it("does not advertise HEIC output without a real HEVC encoder", () => {
+    expect(plan("png", "heic")).toBeUndefined();
+    expect(plan("heic", "png")?.length).toBeGreaterThan(0);
+    expect(plan("png", "jxl")?.length).toBeGreaterThan(0);
+  });
 });

@@ -25,4 +25,5 @@ interface RecastSettings {
   imageQuality: number; resizeEnabled: boolean; maxDimension: number; keepMetadata: boolean;
   videoQuality: "same" | "p1080" | "p720"; namingSuffix: string; autoConvert: boolean;
   destination: { mode: "next" | "exports" | "folder"; folder?: string };
+  targetByCategory?: Partial<Record<CategoryID,string>>;
 }

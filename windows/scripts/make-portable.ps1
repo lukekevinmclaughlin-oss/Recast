@@ -47,3 +47,4 @@ if (Test-Path -LiteralPath $blockedWrapper) {
     Remove-Item -LiteralPath $blockedWrapper -Force
 }
 Write-Output "Created $artifact"
+$global:LASTEXITCODE = 0

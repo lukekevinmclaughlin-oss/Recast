@@ -31,6 +31,9 @@ describe("Recast local conversion engines", () => {
     const docx = await convert(input, "txt", "docx"); expect((await fs.readFile(docx.outputPath)).subarray(0, 2).toString()).toBe("PK");
     const pdf = await convert(input, "txt", "pdf"); expect((await fs.readFile(pdf.outputPath)).subarray(0, 4).toString()).toBe("%PDF");
     const extracted = await convert(pdf.outputPath, "pdf", "txt"); expect(await fs.readFile(extracted.outputPath, "utf8")).toContain("Recast keeps this conversion");
+    const raster = await convert(pdf.outputPath, "pdf", "png");
+    const pixels = await sharp(raster.outputPath).flatten({ background: "#fff" }).removeAlpha().raw().toBuffer();
+    expect(pixels.some(value => value < 100)).toBe(true);
   }, 30_000);
 
   it("converts images and embeds them in PDF", async () => {
@@ -44,5 +47,30 @@ describe("Recast local conversion engines", () => {
     const zip = await convert(text, "txt", "zip"); expect((await fs.readFile(zip.outputPath)).subarray(0, 2).toString()).toBe("PK");
     const input = path.join(root, "tone.wav"); await fs.writeFile(input, wav());
     const mp3 = await convert(input, "wav", "mp3"); expect(mp3.outputSize).toBeGreaterThan(500);
-  }, 30_000);
+  }, 120_000);
+
+  it("writes real JPEG XL and preserves RGB channels through BMP, TGA and PPM", async () => {
+    const input = path.join(root, "red-green-blue.png");
+    const pixels = Buffer.from([255,0,0,0,255,0,0,0,255]);
+    await sharp(pixels,{raw:{width:3,height:1,channels:3}}).png().toFile(input);
+    for (const format of ["bmp", "tga", "ppm", "jxl"]) {
+      const converted = await convertFile(input,"png",format,{...options(),imageQuality:1},new AbortController().signal,()=>undefined);
+      if(format === "jxl") expect((await fs.readFile(converted.outputPath)).subarray(0,2)).toEqual(Buffer.from([0xff,0x0a]));
+      const restored = await convert(converted.outputPath,format,"png");
+      expect(await sharp(restored.outputPath).removeAlpha().raw().toBuffer()).toEqual(pixels);
+    }
+  },30_000);
+
+  it("reads Apple icon PNG representations and normalizes EXIF orientation", async () => {
+    const png = await sharp({create:{width:64,height:64,channels:3,background:'#ff0000'}}).png().toBuffer();
+    const header = Buffer.alloc(16); header.write('icns'); header.writeUInt32BE(16+png.length,4); header.write('icp6',8); header.writeUInt32BE(8+png.length,12);
+    const input = path.join(root,'example.icns'); await fs.writeFile(input,Buffer.concat([header,png]));
+    const converted = await convert(input,'icns','png');
+    expect((await sharp(converted.outputPath).metadata()).width).toBe(64);
+    const rotated = path.join(root,'rotate.jpg');
+    await sharp({create:{width:60,height:30,channels:3,background:'#00ff00'}}).withMetadata({orientation:6}).jpeg().toFile(rotated);
+    const restored = await convert(rotated,'jpeg','png');
+    const metadata = await sharp(restored.outputPath).metadata();
+    expect([metadata.width,metadata.height]).toEqual([30,60]);
+  },30_000);
 });

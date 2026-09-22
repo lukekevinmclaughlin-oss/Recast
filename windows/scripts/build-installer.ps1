@@ -2,6 +2,19 @@ $ErrorActionPreference = "Stop"
 
 $project = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $script = Join-Path $project "build\installer.nsi"
+$packagedRoot = (Resolve-Path -LiteralPath (Join-Path $project 'release\win-unpacked')).Path
+$uninstallLines = [System.Collections.Generic.List[string]]::new()
+Get-ChildItem -LiteralPath $packagedRoot -Recurse -File | ForEach-Object {
+    $relative = $_.FullName.Substring($packagedRoot.Length + 1)
+    if ($relative.Contains('$') -or $relative.Contains('"')) { throw 'Unexpected installer filename.' }
+    $uninstallLines.Add('Delete "$INSTDIR\' + $relative + '"')
+}
+Get-ChildItem -LiteralPath $packagedRoot -Recurse -Directory | Sort-Object { $_.FullName.Length } -Descending | ForEach-Object {
+    $relative = $_.FullName.Substring($packagedRoot.Length + 1)
+    if ($relative.Contains('$') -or $relative.Contains('"')) { throw 'Unexpected installer directory.' }
+    $uninstallLines.Add('RMDir "$INSTDIR\' + $relative + '"')
+}
+$uninstallLines | Set-Content -LiteralPath (Join-Path $project 'build\uninstall-files.nsh') -Encoding utf8
 $cache = Join-Path $env:LOCALAPPDATA "electron-builder\Cache\nsis"
 $compiler = Get-ChildItem -LiteralPath $cache -Recurse -Filter "makensis.exe" -File -ErrorAction SilentlyContinue |
     Where-Object { $_.Directory.Name -eq "Bin" } |

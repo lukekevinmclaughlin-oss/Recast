@@ -4,7 +4,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "dist-electron", "release", "node_modules", "models"] },
+  { ignores: ["dist", "dist-electron", "release", "node_modules", "models", "vendor"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -18,7 +18,7 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
   },
   {
-    files: ["build/**/*.cjs"],
+    files: ["build/**/*.cjs", "scripts/**/*.cjs"],
     languageOptions: { globals: globals.node, sourceType: "commonjs" },
     rules: { "@typescript-eslint/no-require-imports": "off" },
   },

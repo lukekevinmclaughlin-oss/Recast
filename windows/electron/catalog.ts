@@ -46,7 +46,9 @@ const matrix = (sources: string[], targets: string[], backend: Edge["backend"], 
 };
 
 const imageRead = ["jpeg", "png", "heic", "tiff", "gif", "bmp", "webp", "ico", "icns", "avif", "jxl", "psd", "tga", "ppm", "svg"];
-const imageWrite = ["jpeg", "png", "heic", "tiff", "gif", "bmp", "webp", "ico", "avif", "jxl", "tga", "ppm"];
+// The bundled engine decodes HEIC but does not include an HEVC encoder. Never
+// write AV1 bytes to a .heic filename or offer a conversion without its codec.
+const imageWrite = ["jpeg", "png", "tiff", "gif", "bmp", "webp", "ico", "avif", "jxl", "tga", "ppm"];
 matrix(imageRead, imageWrite, "image", 1);
 for (const source of imageRead) add(source, "pdf", "image", 1.2);
 for (const target of ["png", "jpeg", "tiff"]) add("pdf", target, "pdf", 1.4);
@@ -61,7 +63,7 @@ for (const source of video) add(source, "gifv", "media", 2.2);
 
 const data = ["json", "yaml", "xml", "plist", "csv", "tsv", "toml"];
 matrix(data, data, "data", 1);
-const documents = ["txt", "html", "md", "rst", "tex", "org", "rtf", "rtfd", "doc", "docx", "odt", "epub"];
+const documents = ["txt", "html", "md", "rst", "tex", "org", "rtf", "doc", "docx", "odt", "epub"];
 matrix(documents, documents, "document", 1.4);
 for (const source of documents) add(source, "pdf", "document", 1.5);
 
@@ -125,5 +127,5 @@ export function defaultTarget(source: Format): Format {
 export const capabilities = {
   formatCount: new Set(graph.flatMap((edge) => [edge.from, edge.to])).size,
   edgeCount: graph.length,
-  tools: ["Sharp", "FFmpeg", "PDF.js", "local document + data engines"],
+  tools: ["ImageMagick", "FFmpeg", "PDF.js", "LibreOffice", "Pandoc"],
 };

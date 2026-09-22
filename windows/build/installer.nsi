@@ -61,5 +61,7 @@ Section "Uninstall"
   RMDir "$SMPROGRAMS\Recast"
   DeleteRegKey HKCU "${UNINSTALL_KEY}"
   DeleteRegKey HKCU "Software\Luke McLaughlin\Recast"
-  RMDir /r "$INSTDIR"
+  !include "uninstall-files.nsh"
+  Delete "$INSTDIR\Uninstall Recast.exe"
+  RMDir "$INSTDIR"
 SectionEnd

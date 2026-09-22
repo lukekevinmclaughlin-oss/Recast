@@ -9,8 +9,10 @@
     "dev": "vite",
     "test": "vitest run",
     "lint": "eslint . --max-warnings 0",
-    "build": "node scripts/make-icon.mjs && tsc && vite build && tsc -p tsconfig.electron.json",
-    "package:win": "pnpm run build && electron-builder --win dir --x64 && powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/build-installer.ps1 && powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/make-portable.ps1"
+    "prepare:images": "node scripts/prepare-image-engine.mjs",
+    "prepare:documents": "node scripts/prepare-document-engines.mjs",
+    "build": "node scripts/prepare-image-engine.mjs && node scripts/prepare-document-engines.mjs && node scripts/make-icon.mjs && tsc && vite build && tsc -p tsconfig.electron.json",
+    "package:win": "pnpm run build && electron-builder --win dir --x64 --publish never && powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/build-installer.ps1 && powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/make-portable.ps1"
   },
   "dependencies": {
     "@iarna/toml": "2.2.5",
@@ -70,14 +72,23 @@
     },
     "files": [
       "dist/**/*",
-      "dist-electron/**/*"
+      "dist-electron/**/*",
+      "build/icon.ico",
+      "vendor/imagemagick/**/*",
+      "vendor/libreoffice/**/*",
+      "vendor/pandoc/**/*",
+      "THIRD-PARTY-ENGINES.md",
+      "README.md",
+      "native/image-policy/**/*"
     ],
     "asarUnpack": [
       "**/*.node",
       "**/ffmpeg-static/**/*",
       "**/@napi-rs/**/*",
       "**/@resvg/**/*",
-      "**/sharp/**/*"
+      "**/sharp/**/*",
+      "vendor/**/*",
+      "native/**/*"
     ],
     "afterPack": "build/afterPack.cjs",
     "win": {

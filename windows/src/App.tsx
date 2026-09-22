@@ -29,7 +29,7 @@ function FormatSelect({ job, onChange }: { job: Job; onChange(value: RecastForma
     return [...grouped.entries()];
   }, [job.targets]);
   return <label className="format-select" style={{ "--target": colors[job.target.category] } as React.CSSProperties}>
-    <select value={job.target.id} onChange={(event) => { const target = job.targets.find((item) => item.id === event.target.value); if (target) onChange(target); }}>
+    <select value={job.target.id} disabled={job.status === "running" || job.status === "queued"} onChange={(event) => { const target = job.targets.find((item) => item.id === event.target.value); if (target) onChange(target); }}>
       {groups.map(([category, formats]) => <optgroup key={category} label={category.toUpperCase()}>{formats.map((format) => <option key={format.id} value={format.id}>{format.name}</option>)}</optgroup>)}
     </select><ChevronDown />
   </label>;
@@ -56,9 +56,25 @@ function JobRow({ job, update, start, cancel, remove }: { job: Job; update(forma
 }
 
 function SettingsPanel({ settings, setSettings, close }: { settings: RecastSettings; setSettings(value: RecastSettings): void; close(): void }) {
+  type Preset = { id:string; name:string; settings:RecastSettings };
+  const [presets,setPresets] = useState<Preset[]>(()=>{
+    try { const saved=JSON.parse(localStorage.getItem("recast.presets.v1") || "[]");return Array.isArray(saved)?saved.filter(p=>typeof p?.id==="string"&&typeof p?.name==="string"&&p.settings?.destination).slice(0,25):[]; } catch { return []; }
+  });
+  const [presetName,setPresetName] = useState("");
+  const [selectedPreset,setSelectedPreset] = useState("");
+  const [presetNotice,setPresetNotice] = useState("");
+  useEffect(()=>localStorage.setItem("recast.presets.v1",JSON.stringify(presets)),[presets]);
+  const savePreset=()=>{
+    const name=presetName.trim().slice(0,60);if(!name)return;
+    const existing=presets.find(p=>p.name.toLowerCase()===name.toLowerCase());
+    if(!existing&&presets.length>=25){setPresetNotice("You can save up to 25 presets. Remove one to add another.");return;}
+    const preset={id:existing?.id||crypto.randomUUID(),name,settings:structuredClone(settings)};
+    setPresets(current=>[...current.filter(p=>p.id!==preset.id),preset]);setSelectedPreset(preset.id);setPresetNotice(`Saved ${name}.`);
+  };
   const patch = <K extends keyof RecastSettings>(key: K, value: RecastSettings[K]) => setSettings({ ...settings, [key]: value });
   const pickFolder = async () => { const folder = await window.recastNative.chooseFolder(); if (folder) patch("destination", { mode: "folder", folder }); };
   return <div className="modal-backdrop" onMouseDown={(event) => { if (event.currentTarget === event.target) close(); }}><section className="settings-panel"><header><div><Settings2 /><span><strong>Settings</strong><small>Windows conversion engines</small></span></div><IconButton title="Close settings" onClick={close}><X /></IconButton></header><div className="settings-scroll">
+    <fieldset><legend>Saved presets</legend><label className="text-row"><span>Preset name</span><input value={presetName} maxLength={60} placeholder="e.g. Web images" onChange={event=>setPresetName(event.target.value)} /></label><button className="folder-path" disabled={!presetName.trim()} onClick={savePreset}>Save or update preset</button><label className="select-row"><span>Saved settings</span><select value={selectedPreset} onChange={event=>setSelectedPreset(event.target.value)}><option value="">Choose a preset</option>{presets.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><div className="preset-actions"><button disabled={!selectedPreset} onClick={()=>{const preset=presets.find(p=>p.id===selectedPreset);if(preset){setSettings(structuredClone(preset.settings));setPresetName(preset.name);setPresetNotice(`Applied ${preset.name}.`);}}}>Apply preset</button><button disabled={!selectedPreset} onClick={()=>{setPresets(current=>current.filter(p=>p.id!==selectedPreset));setSelectedPreset("");setPresetNotice("Preset removed. Current settings are unchanged.");}}>Remove preset</button></div><p className="preset-notice" role="status">{presetNotice}</p></fieldset>
     <fieldset><legend>General</legend><label className="toggle-row"><span><strong>Convert automatically on drop</strong><small>Start each recognized file as soon as it joins the queue.</small></span><input type="checkbox" checked={settings.autoConvert} onChange={(event) => patch("autoConvert", event.target.checked)} /></label></fieldset>
     <fieldset><legend>Images</legend><label className="range-row"><span>Quality <b>{Math.round(settings.imageQuality * 100)}%</b></span><input type="range" min="0.1" max="1" step="0.01" value={settings.imageQuality} onChange={(event) => patch("imageQuality", Number(event.target.value))} /></label><label className="toggle-row"><span><strong>Resize to a maximum size</strong><small>Constrain the longest edge without enlarging smaller images.</small></span><input type="checkbox" checked={settings.resizeEnabled} onChange={(event) => patch("resizeEnabled", event.target.checked)} /></label>{settings.resizeEnabled && <label className="range-row"><span>Longest edge <b>{settings.maxDimension}px</b></span><input type="range" min="320" max="8192" step="64" value={settings.maxDimension} onChange={(event) => patch("maxDimension", Number(event.target.value))} /></label>}<label className="toggle-row"><span><strong>Keep EXIF and metadata</strong></span><input type="checkbox" checked={settings.keepMetadata} onChange={(event) => patch("keepMetadata", event.target.checked)} /></label></fieldset>
     <fieldset><legend>Video</legend><label className="select-row"><span>Quality</span><select value={settings.videoQuality} onChange={(event) => patch("videoQuality", event.target.value as RecastSettings["videoQuality"])}><option value="same">Same quality</option><option value="p1080">1080p</option><option value="p720">720p</option></select></label></fieldset>
@@ -75,11 +91,14 @@ export default function App() {
   useEffect(() => { localStorage.setItem("recast.settings.v1", JSON.stringify(settings)); }, [settings]);
 
   const addPaths = useCallback(async (paths: string[]) => {
-    if (!paths.length) return; const result = await window.recastNative.inspect(paths);
+    if (!paths.length) return;
+    try {
+    const result = await window.recastNative.inspect(paths);
     if (result.skipped) { setNotice(`${result.skipped} unsupported file${result.skipped === 1 ? "" : "s"} skipped`); setTimeout(() => setNotice(""), 3500); }
-    const incoming = result.jobs.map<Job>((job) => ({ ...job, status: settings.autoConvert ? "queued" : "ready", progress: 0 }));
+    const incoming = result.jobs.map<Job>((job) => ({ ...job, target:job.targets.find(target=>target.id===settings.targetByCategory?.[job.source.category])||job.target,status: settings.autoConvert ? "queued" : "ready", progress: 0 }));
     setJobs((current) => [...current, ...incoming]);
-  }, [settings.autoConvert]);
+    } catch (error) { setNotice(error instanceof Error ? error.message : String(error)); }
+  }, [settings.autoConvert,settings.targetByCategory]);
   const chooseFiles = useCallback(async () => addPaths(await window.recastNative.chooseFiles()), [addPaths]);
   useEffect(() => window.recastNative.onChooseFiles(() => void chooseFiles()), [chooseFiles]);
 
@@ -96,13 +115,17 @@ export default function App() {
   useEffect(() => { if (!jobs.some((job) => job.status === "running")) { const next = jobs.find((job) => job.status === "queued" && !active.current.has(job.id)); if (next) void run(next); } }, [jobs, run]);
 
   const updateJob = (id: string, transform: (job: Job) => Job) => setJobs((current) => current.map((job) => job.id === id ? transform(job) : job));
-  const retarget = (id: string, target: RecastFormat) => updateJob(id, (job) => ({ ...job, target, status: job.status === "done" ? "queued" : job.status, outputPath: job.status === "done" ? undefined : job.outputPath, outputSize: job.status === "done" ? undefined : job.outputSize }));
+  const retarget = (id: string, target: RecastFormat) => {
+    const source=jobs.find(job=>job.id===id)?.source;
+    if(source)setSettings(current=>({...current,targetByCategory:{...current.targetByCategory,[source.category]:target.id}}));
+    updateJob(id, (job) => ({ ...job, target, status: job.status === "done" ? "queued" : job.status, outputPath: job.status === "done" ? undefined : job.outputPath, outputSize: job.status === "done" ? undefined : job.outputSize }));
+  };
   const start = (id: string) => updateJob(id, (job) => ({ ...job, status: "queued" }));
   const cancel = (id: string) => { updateJob(id, (job) => ({ ...job, status: "cancelled" })); void window.recastNative.cancel(id); };
   const remove = (id: string) => { void window.recastNative.cancel(id); setJobs((current) => current.filter((job) => job.id !== id)); };
-  const unfinished = jobs.filter((job) => !["done", "failed", "cancelled"].includes(job.status));
+  const unfinished = jobs.filter((job) => ["ready", "failed", "cancelled"].includes(job.status));
   const commonTargets = useMemo(() => unfinished.length < 2 ? [] : unfinished[0].targets.filter((format) => unfinished.every((job) => job.targets.some((candidate) => candidate.id === format.id))), [unfinished]);
-  const convertAll = (targetId: string) => { const target = capabilities?.formats.find((format) => format.id === targetId); if (!target) return; setJobs((current) => current.map((job) => job.status === "done" ? job : { ...job, target, status: "queued" })); };
+  const convertAll = (targetId: string) => { const target = capabilities?.formats.find((format) => format.id === targetId); if (!target) return; setJobs((current) => current.map((job) => ["ready","failed","cancelled"].includes(job.status) && job.targets.some(item=>item.id===targetId) ? { ...job, target, status: "queued" } : job)); };
   const drop = (event: DragEvent) => { event.preventDefault(); setDragging(false); void addPaths(window.recastNative.pathsForDrop([...event.dataTransfer.files])); };
 
   return <main className="recast-app" onDragOver={(event) => { event.preventDefault(); setDragging(true); }} onDragLeave={(event) => { if (event.currentTarget === event.target) setDragging(false); }} onDrop={drop}>

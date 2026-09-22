@@ -150,3 +150,7 @@ button { transition: transform 160ms cubic-bezier(.34,1.56,.64,1), box-shadow 18
 button:active { transform: scale(.975); }
 button:focus-visible, input:focus-visible { outline: none; box-shadow: 0 0 0 2px #07101d, 0 0 0 4.5px rgba(79,233,245,.7); }
 @media (prefers-reduced-motion: reduce) { button { transition: none; } }
+.preset-actions { display:flex; gap:8px; margin-top:10px; }
+.preset-actions button { padding:8px 12px; border:1px solid #274051; border-radius:8px; background:#102231; color:#d9f6fb; }
+.preset-actions button:disabled { opacity:.45; }
+.preset-notice { min-height:1.4em; font-size:12px; color:#9db5c5; }

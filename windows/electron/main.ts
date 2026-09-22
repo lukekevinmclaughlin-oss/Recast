@@ -4,6 +4,8 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { capabilities, categories, classify, defaultTarget, formats, graph, reachable } from "./catalog";
 import { convertFile, type ConversionOptions } from "./converters";
+import { automationUsage, parseAutomation, runAutomation } from "./automation";
+import { expandPaths } from "./intake";
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -41,16 +43,8 @@ function createTray(): void {
   tray.on("double-click", showWindow);
 }
 
-async function expand(input: string): Promise<string[]> {
-  const stat = await fs.stat(input).catch(() => null); if (!stat) return [];
-  if (stat.isFile()) return [input]; if (!stat.isDirectory()) return [];
-  const entries = await fs.readdir(input, { withFileTypes: true });
-  const nested = await Promise.all(entries.filter((entry) => !entry.name.startsWith(".")).map((entry) => expand(path.join(input, entry.name))));
-  return nested.flat();
-}
-
 async function inspectPaths(paths: string[]) {
-  const expanded = (await Promise.all(paths.map(expand))).flat();
+  const expanded = await expandPaths(paths);
   const jobs = [];
   for (const filePath of expanded) {
     const source = classify(filePath); if (!source) continue;
@@ -82,7 +76,21 @@ function registerIpc(): void {
   ipcMain.handle("recast:open", (_event, filePath: string) => shell.openPath(filePath));
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  const args = process.argv.slice(app.isPackaged ? 1 : 2);
+  if (args.some(arg => ["--convert", "--formats", "--help"].includes(arg))) {
+    if (args.includes("--help")) { process.stdout.write(automationUsage); app.exit(0); return; }
+    if (args.includes("--formats")) { process.stdout.write(JSON.stringify(formats.filter(format=>reachable(format.id).length),null,2)+"\n"); app.exit(0); return; }
+    const controller = new AbortController();
+    process.once("SIGINT",()=>controller.abort());
+    try {
+      const request = parseAutomation(args);
+      const report = await runAutomation(request,controller.signal);
+      process.stdout.write(JSON.stringify(report,null,2)+"\n");
+      app.exit(report.passed ? 0 : 1);
+    } catch(error) { process.stderr.write((error instanceof Error ? error.message : String(error))+"\n"); app.exit(2); }
+    return;
+  }
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => callback({ responseHeaders: { ...details.responseHeaders, "Content-Security-Policy": ["default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self';"] } }));
   registerIpc(); createWindow(); createTray();
   app.on("activate", showWindow);
